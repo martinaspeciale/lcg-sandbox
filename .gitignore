@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.so
+*.egg-info/
+*.egg
+*.manifest
+*.spec
+dist/
+build/
+.env
+.venv*
+venv/
+pip-wheel-metadata/
+.python-version
+
+# Virtual environments
+.venv/
+.venv311/
+env/
+env.bak/
+venv.bak/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Test / cache
+.pytest_cache/
+.ruff_cache/
+coverage.xml
+htmlcov/
+
+# LangChain / experimental files
+*.db
+*.sqlite
+.cache/
+
