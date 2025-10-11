@@ -5,6 +5,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain.agents import create_tool_calling_agent, AgentExecutor
 import os
+from exercises.tools import search_tool
 
 load_dotenv()
 model = os.getenv("GROQ_MODEL")
@@ -58,23 +59,31 @@ prompt = ChatPromptTemplate.from_messages(
 ).partial(format_instructions=parser.get_format_instructions())
 
 
+tools = [search_tool]
 agent = create_tool_calling_agent(
     llm=llm,
     prompt=prompt,
-    tools=[]
+    tools=tools
 )
 
 agent_executor = AgentExecutor(
     agent=agent,
-    tools=[],
+    tools=tools,
     verbose=True
 )
 
 raw_response = agent_executor.invoke({"query": "What is the capital of France?"})
 # print(raw_response)
 
-structured_response = parser.parse(raw_response.get("output"))
-# print("\n\n", structured_response)
+try:
+    structured_response = parser.parse(raw_response.get("output"))
+    # print("\n\n", structured_response)
+    for key, value in structured_response:
+        print(f"* {key} : {value}")
+except Exception as e:
+    print("Error parsing response", e, "\nRaw response: ", raw_response)
 
-for key, value in structured_response:
-    print(f"* {key} : {value}")
+
+# we want to add the ability to add various tools 
+# Tools are things that the LLM/agent can use that we can either write ourself or we can bring in from things like the Langchain Community Hub
+
