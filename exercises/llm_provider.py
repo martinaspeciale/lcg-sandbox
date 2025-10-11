@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def get_chat_llm():
     provider = os.getenv("PROVIDER", "groq").lower()
