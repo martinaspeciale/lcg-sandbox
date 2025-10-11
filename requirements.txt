@@ -9,3 +9,5 @@ ipython==8.28.0
 beautifulsoup4==4.12.3
 langchain-groq
 python-dotenv
+langchain-community
+
