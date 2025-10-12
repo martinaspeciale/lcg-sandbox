@@ -47,3 +47,6 @@ htmlcov/
 *.sqlite
 .cache/
 
+# --- Research outputs & diffs ---
+local_changes.diff
+research/
