@@ -5,7 +5,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain.agents import create_tool_calling_agent, AgentExecutor
 import os
-from exercises.tools import search_tool
+from exercises.tools import search_tool, wiki_tool, save_tool, save_to_txt, print_agent_log
+import json 
 
 load_dotenv()
 model = os.getenv("GROQ_MODEL")
@@ -41,9 +42,17 @@ prompt = ChatPromptTemplate.from_messages(
         (
             "system",
             """
-            You are a research assistant that will help generate a research paper.
-            Answer the user query and use necessary tools. 
-            Wrap the output in this format and provide no other text\n{format_instructions}
+            You are a research assistant helping generate a research summary.
+            You can use ONLY these tools when needed: Wikipedia and search.
+
+            Your goal is to collect enough information to write a concise and accurate summary.
+            Once you have enough information to answer, STOP using tools and produce your final answer.
+
+            The final answer must be a valid JSON object matching this format:
+            {format_instructions}
+
+            Respond with ONLY the JSON object — no explanations, no markdown, and no extra text.
+            If you already have sufficient info, do not call any more tools.
             """,
         ),
         ("placeholder", "{chat_history}"),
@@ -59,7 +68,7 @@ prompt = ChatPromptTemplate.from_messages(
 ).partial(format_instructions=parser.get_format_instructions())
 
 
-tools = [search_tool]
+tools = [search_tool, wiki_tool]
 agent = create_tool_calling_agent(
     llm=llm,
     prompt=prompt,
@@ -69,20 +78,44 @@ agent = create_tool_calling_agent(
 agent_executor = AgentExecutor(
     agent=agent,
     tools=tools,
-    verbose=True
+    verbose=True,
+    max_iterations=5,
+    early_stopping_method="generate"
 )
 
-raw_response = agent_executor.invoke({"query": "What is the capital of France?"})
+query = input("What can I help you research?")
+
+print_agent_log("Starting agent: ", input_data=query)
+
+raw_response = agent_executor.invoke({"query": query})
 # print(raw_response)
 
+print_agent_log("\nAgent finished: ", output_data=str(raw_response))
+
 try:
-    structured_response = parser.parse(raw_response.get("output"))
-    # print("\n\n", structured_response)
+    output_text = raw_response.get("output", "")
+
+    if '"properties":' in output_text:
+        try:
+            data = json.loads(output_text)
+            if isinstance(data, dict) and "properties" in data:
+                data = data["properties"]
+            structured_response = ResearchResponse(**data)
+        except Exception as e:
+            raise ValueError(f"Failed to fix nested 'properties' JSON: {e}")
+    else:
+        structured_response = parser.parse(output_text)
+
     for key, value in structured_response:
         print(f"* {key} : {value}")
-except Exception as e:
-    print("Error parsing response", e, "\nRaw response: ", raw_response)
 
+    save_to_txt(
+        data=json.dumps(structured_response.dict(), indent=2, ensure_ascii=False),
+        filename="research/full_research_output.txt"
+    )
+
+except Exception as e:
+    print("Error parsing response:", e, "\nRaw response:", raw_response)
 
 # we want to add the ability to add various tools 
 # Tools are things that the LLM/agent can use that we can either write ourself or we can bring in from things like the Langchain Community Hub
