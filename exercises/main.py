@@ -110,7 +110,7 @@ try:
         print(f"* {key} : {value}")
 
     save_to_txt(
-        data=json.dumps(structured_response.dict(), indent=2, ensure_ascii=False),
+        data=json.dumps(structured_response.model_dump(), indent=2, ensure_ascii=False),
         filename="research/full_research_output.txt"
     )
 
