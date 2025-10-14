@@ -12,3 +12,4 @@ python-dotenv
 langchain-community
 ddgs
 wikipedia
+duckduckgo-search
